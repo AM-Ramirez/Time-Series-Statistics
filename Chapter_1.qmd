@@ -1,0 +1,390 @@
+---
+title: "Chapter 1: Time Series Data Sets"
+author: "Alex Ramirez"
+date: "8/26/2023"
+format:
+  html:
+    toc: true
+    embed-resources: true
+    code-fold: true
+    code-line-numbers: true
+    code-summary: "Show Me The Code!"
+    code-tools: true
+editor: visual
+fig-cap-location: top
+#| warning: false
+---
+
+## Preface Packages:
+
+-   tswge (available on CRAN)
+-   [Book](blog.smu.edu/timeseries/)
+-   [Github](https://github.com/BivinSadler/Time-Series-for-Data-Science)
+-   80 QR codes link to tutorial videos by the authors
+
+## 1.1 Introduction: includes real world examples and data dependencies on time that cannot be randomly sampled
+
+::: pannel-tabset
+## 1.2 Time Series Data Sets:
+
+**1.2.1 Cyclic Data: data display rises and falls in somewhat a repetitive fashion / "pseudo-periodic"**
+
+-   Truly period means repeats exactly over a fixed time frame (i.e. sine curve)
+
+-   Viewing time series realizations over a shorter time span can improve the interpretation of the data behavior (snippet of time)
+
+    -   Use Sunspot 2.0
+
+**1.2.1.2 DFW Temperature Data:** -
+
+-   Data related to the **calendar year** is referred to as **seasonal** data
+
+-   Temperature data can be described as **pseudo-sinusoida**l
+
+**1.2.1.3 Air Passengers Data:**
+
+-   Data expanding within-year variability is called multiplicative seasonality
+
+**1.2.2 Trends:**
+
+-   A trend is a **tendency for data to increase (or decrease) steadily over time**
+
+-   Air passengers have an increasing trending behavior / linear trend would be a "tendency" in a linear fashion
+
+-   Trends could be exponential, but a typical patter is random trending behavior (aimless wandering) -
+
+-   Data with trending and **random wandering** are not cyclic in nature / sometimes called **aperiodic** (no regular rise and fall behavior)
+
+**1.2.2.1 Real Datasets that have trending behavior:**
+
+1.  Dow Jones closing average upward trending behavior
+
+2.  West Texas Intermediate Crude Oil Price explosively increasing trend (J curve)
+
+3.  Bitcoin trending upward
+
+**1.2.2.2 The problem with trends**
+
+-   **Valid question:** "Will the trend continue?"
+
+    -   1\) Trending behavior provides information about the time frame in which the data were collected (or has occurred)
+
+    -   2\) Predictions that trending behavior will continue is analogous to extrapolating in regression beyond the range of the predictor variables
+
+    -   3\) Trending behavior will be covered in ch. 7 - 8
+
+    -   4\) Predictions about future values should involve domain knowledge as well as data analysis
+
+        -   Ex. short-term stocks bounce around. long-term trend should continue unless conditions change regarding US economy
+
+## 1.3 The Programming Language R
+
+**1.3.1 The tswge Time Series Package**
+
+*Loading tswge*
+
+```{r}
+#| warning: false
+library(tswge)
+
+
+```
+
+**1.3.2 Base R: download base R** **1.3.3 Plotting Time Series Data in R**
+
+```{r}
+data(dfw.2011) # average monthly temperatures in DFW from 1900 to 2020 is dfw.mon within tswge 
+plot(dfw.2011) #scatter plot by default plot(dfw.2011 ,type= 'l') 
+```
+
+**1.3.4 The ts Object:**
+
+**1.3.4.1 Creating ts Object**
+
+```{r}
+dfw.2011.ts = ts(dfw.2011,start=c(2011,1),frequency=12) #makes the first time to be 2011,1 with a frequency of 12 
+plot(dfw.2011.ts) # adds the years in the data on the x-axis 
+class(dfw.2011.ts) # states the class of the object as time series 
+class(dfw.2011) # states the class of data as numeric 
+
+# lynx data set / trapped in mcKenzie River District between 1821 and 1934 
+data(lynx) # lynx data set is a TS object 
+plot(lynx) 
+class(lynx) # shows that the observation is annual as it starts in a year and has frequency of 1 
+```
+
+**1.3.4.2: More about ts Objects:**
+
+1.  Extracting vector data from a ts Object:
+    1.  Numeric only example
+
+```{r}
+dfw.2011.num = as.numeric(dfw.2011.ts) 
+class(dfw.2011.num) 
+dfw.2011.num 
+```
+
+2)  More on Creating a ts Object:
+
+```{r}
+x = c(10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170) 
+# assume x has frequency of 12 starting June 2018 
+xTSmonth = ts(x, start = c(2018,6), frequency = 12) 
+# if you assume frequency of 4 it will generate quarterly starting 3Q86 
+xTSquarter = ts(x,start = c(1986,3), frequency = 4) 
+# 4th day of every month would be c(1,4) / start is 4th day of the week, but it will day 4 observations to finish the first week 
+# for weekly you can use frequency 7 
+xTSweek = ts(x,start=c(1,4), frequency = 7) 
+xTSweek2 = ts(x,end=c(3,6),frequency = 7) 
+# let's analyze the ts field 
+window(xTSweek, start = c(2,1), end = c(2,7)) 
+# starts the second week day 1 through second week day 7 
+window(AirPassengers, start = c(1950,1), end=c(1950,12)) 
+# ts object is valuable for storing time series and their most important attributes in one place 
+# ts objects can be useful in plotting and subsetting the series, useful in modeling 
+# Multivariate version of a ts object is called an mts object for multivariate data structures / ch 10 & 11
+```
+
+**1.3.5 the plotss.wge function in tswge**
+
+-   plotss.wge extends the base plot function, and can plot datasets with numeric vectors and ts objects
+
+    -   It also allows you to dress up with colors labels, line widths and more
+
+```{r}
+data(lynx) 
+log.lynx=log(lynx) 
+plotts.wge(log.lynx) # plots points if realization length is <= 200, do not include if greater than 200
+```
+
+**1.3.5.1 Modifying the appearance of plots using the tswge plotts.wge function**
+
+```{r}
+# ?plotts.wge for more on the function 
+plotts.wge(log.lynx, style = 1, xlab = "Date", ylab = "Logarithm of Lynx Data", main = "Natural Logarithm of Number of Lynx Trapped from 1821 and 1934", text_size = 12)
+```
+
+**1.3.6 Loading Time Series Data into R**
+
+**1.3.6.1 The .csv file:** Use double backslash \\ or use forward slashes to read the file path Header = TRUE treats the first row as a header row for variable names
+
+```{r}
+AirPassengersData=read.csv("C:\\Users\\Alex Ramirez\\Desktop\\Fall 2024\\Time Series\\AirPassengers.csv",header=TRUE)
+```
+
+File.chose option which can be easier / may be hiding behind your RStudio
+
+```{r}
+AirPassngersData2=read.csv(file.choose(), header=TRUE) 
+head(AirPassengersData, n=10) # shows the first 10 records 
+```
+
+**1.3.6.2 The .txt file** Scan Function: reads each of the datasets into the same numerical R vector
+
+```{r}
+s1 = scan("C:\\Users\\Alex Ramirez\\Desktop\\Fall 2024\\Time Series\\Sample1.txt") 
+s2 = scan("C:\\Users\\Alex Ramirez\\Desktop\\Fall 2024\\Time Series\\Sample2.txt") # you can also use file.choose with the scan function  
+```
+
+**1.3.6.3 Other File Formats:**
+
+-   .xlsx, JSON, XML
+
+**1.3.7 Accessing Time Series Data:**
+
+-   tswge package is a great source by issuing commands, but we will talk about downloading from the internet
+
+**1.3.7.1 Accessing Data from the Internet**
+
+-   *FRED:* Federal Reserve economic [Database](https://fred.stlouisfed.org)
+
+    -   Hundreds plus economic time series from around the world
+
+```{r}
+WTI=read.csv("C:\\Users\\Alex Ramirez\\Desktop\\Fall 2024\\Time Series\\POILWTIUSDM.csv",header=TRUE) 
+wtcrude2020=ts(WTI$POILWTIUSDM,start=c(1990,1), end=c(2020,12),frequency=12) 
+plot(wtcrude2020) #crude oil dataset
+```
+
+-   *FRED:* Median Home Prices
+
+```{r}
+MedDays=read.csv("C:\\Users\\Alex Ramirez\\Desktop\\Fall 2024\\Time Series\\MEDDAYONMARUS.csv",header=TRUE) 
+MedDays.ts=ts(MedDays$MEDDAYONMARUS, start=c(2016,7), end=c(2021,4),frequency = 12) 
+plotts.wge(MedDays.ts) 
+```
+
+-   *Silso:* Sunspot Index and Lon-Term Solar Observations [data](www.sidc.oma.be/silso)
+
+```{r}
+ss=read.csv("C:\\Users\\Alex Ramirez\\Desktop\\Fall 2024\\Time Series\\SN_y_tot_V2.0.csv",";",header=FALSE)
+sunspot2.0=ts(ss$V2,start=1700,frequency=1) 
+plotts.wge(sunspot2.0)
+
+ss.month=read.csv("C:\\Users\\Alex Ramirez\\Desktop\\Fall 2024\\Time Series\\SN_m_tot_V2.0.csv",';',header=FALSE) 
+sunspot2.0.month=ts(ss.month$V4,start=c(1749,1),frequency=12) 
+plotts.wge(sunspot2.0.month)
+
+ss.year=read.csv("C:\\Users\\Alex Ramirez\\Desktop\\Fall 2024\\Time Series\\SN_y_tot_V2.0.csv",';',header=FALSE) 
+sunspot2.0.year=ts(ss.year$V2,start=1700,frequency=1) 
+plotts.wge(sunspot2.0.year) 
+```
+
+-   *Yahoo!* [Finance](https://finance.yahoo.com)
+
+```{r}
+tesla=read.csv("C:\\Users\\Alex Ramirez\\Desktop\\Fall 2024\\Time Series\\TSLA.csv",header=TRUE) 
+head(tesla) 
+tesla.ts=ts(tesla$Adj.Close,start=c(2020,1),frequency=254) 
+plotts.wge(tesla.ts)
+```
+
+-   *National Weather* [service](www.weather.gov)
+
+    -   [DFWAvgMon](https://www.weather.gov/fwd/dmotemp) We will discuss downloading from this link later
+
+-   *New York City Taxi & Limousine* [website](https://ww1.nyc.gov/site/tlc/about/about-tlc.page)
+
+-   *Additional:* https://census.gov and https://epa.gov
+
+**1.3.7.2 Business/Proprietary Data: Ozona Bar and Grill**
+
+```{R}
+data(ozona) 
+ozona.ts=ts(ozona$CFS_Sold) 
+plot(ozona.ts, type='o',xlab='Day')
+```
+
+## 1.4 Dealing with Messy Data
+
+Real world data is messy and may need to be cleaned and wrangled: transformed or mapped
+
+**1.4.1.1 Preparing Time Series data for analysis:** ***Cleaning / Wrangling / Imputation*** 1) Data with missing values 2) Data on websites that do not provide a download opiton 3) Data that can be obtained from larger data file but must be assembled and organized before analysis takes place
+
+**1.4.1.1: Missing Data** - BitCoin example: Starts May 1st 2020 to April 30th 2021
+
+```{r}
+data(bitcoin) 
+length(bitcoin) 
+sum(is.na(bitcoin)) 
+# counts NA values there are 3 
+bitcoin.ts = ts(bitcoin, start=c(5,2020), frequency=365) 
+plotts.wge(bitcoin.ts) 
+# missing values october 9th, 12, 13th of 2020 
+# to proceed the values need to be imputed = they need to be approximated and then put into the dataset to replace them 
+```
+
+1)  set xt = xt-1 where xt-1 is the previous data vlaue, which is know (Last Observation Carried Forward (LOCF)
+2)  Linear interpolation: draw a straight line connecting the Xt-1 adn xt+2 and find the midpoint
+
+```{r}
+plotts.wge(bitcoin.ts[154:174]) # easily see the missing points 
+# missing with 1 value: take the prior value and add it to the midpoint 
+bitcoin.ts[162] = bitcoin.ts[161]+(bitcoin.ts[163]-bitcoin.ts[161])/2 
+# Linear interpolation with 2 adjacent missing values 
+bitcoin.ts[165] = bitcoin.ts[164]+(bitcoin.ts[167]-bitcoin.ts[164])/3 
+# divide by three in this case as the leading value is missing 
+bitcoin.ts[166] = bitcoin.ts[164]+2*(bitcoin.ts[167]-bitcoin.ts[164])/3 
+# multiply by 2 to move it one to the right 
+bitcoin.yf =read.csv("C:\\Users\\Alex Ramirez\\Desktop\\Fall 2024\\Time Series\\BTC-USD.csv",header=TRUE) 
+bitcoin.yf.ts = ts(bitcoin.yf$Adj.Close) 
+length(bitcoin.yf.ts) 
+bitcoin.ts=as.numeric(bitcoin.yf$Adj.Close) 
+plotts.wge(bitcoin.ts[154:174]) 
+bitcoin.ts[154:174] 
+length(bitcoin.ts) 
+bitcoin.ts[161:167] 
+bitcoin.yf.ts[161:167] 
+```
+
+**1.4.1.2 Downloading When no.csv download Option available** - See page 33 and 34 to copy data into TXT file
+
+```{r}
+dfw.mon=scan("C:\\Users\\Alex Ramirez\\Desktop\\Fall 2024\\Time Series\\dallastemp.txt") 
+dfw.mon=ts(dfw.mon,start(1990,1),frequency=12) 
+dfw.yr=aggregate(dfw.mon,FUN=mean) 
+plotts.wge(dfw.mon) 
+plotts.wge(dfw.yr)
+```
+
+**1.4.1.3 Data that require cleaning and wrangling** - we will be using the Taxi Cab data
+
+```{r}
+NYCabRaw = read.csv(file.choose(),header=TRUE) 
+#data_reports_monthly 
+head(NYCabRaw) 
+names(NYCabRaw) 
+#shows variable names 
+class(NYCabRaw$Trips.Per.Day) 
+# need to convert to numeric and need to remove comma 
+# we will be using the dplyr package to do this 
+library(dplyr) 
+#install.packages(dplyr) 
+NYCabNew = NYCabRaw %>% select(c(Month.Year,License.Class,Trips.Per.Day)) # selects columns needed
+# selects columns needed 
+head(NYCabNew)
+
+NYCabNew = NYCabNew %>% filter(License.Class == "Yellow") 
+# only selecting Yellow Cabs head(NYCabNew)
+
+NoCommaTrips = sub(",","",NYCabNew$Trips.Per.Day) 
+# substitutes , for"" 
+NoCommaTrips = as.numeric(NoCommaTrips) 
+# resaves values as numeric NoCommaTrips 
+NoCommaTrips = rev(NoCommaTrips) 
+# reverses the order of the values NoCommaTrips
+NyCabNewts = ts(NoCommaTrips,start=c(2010,1),frequency=12) 
+# save as a ts object start in jan 2010 monthly 
+NYCabNewtsShort = window(NyCabNewts,start=c(2019,1),end = c(2020,12)) 
+# only select the values in the window NYCabNewtsShort
+plotts.wge(NYCabNewtsShort, xlab = "Data", ylab="Monthly Yellow Taxi Trips")
+```
+
+**Webscraping example**
+
+```{r}
+library(tidyverse) 
+library(rvest) 
+library(zoo)
+
+url = "https://www.weather.gov/fwd/dmotemp" 
+data = url %>% read_html() %>%
+  html_nodes(xpath='//*[@id="pagebody"]/div[3]/div/table') %>%
+  html_table(fill = TRUE)
+
+# steps to get xpath, select table, right click, inspect, select the line that highlights the table
+data # is a list that is an object that holds other objects class(data)
+data= data[[1]] 
+class(data) 
+head(data)
+
+flipped = data[,c(13,12,11,10,9,8,7,6,5,4,3,2)] 
+flipped 
+flippedm = as.matrix(flipped) 
+flippedm 
+flippedmnt = as.numeric(t(flippedm)) 
+flippedmnt 
+flippedmntr = rev(flippedmnt) 
+flippedmntr 
+flippedmntr = na.trim(flippedmntr) 
+class(flippedmntr) 
+flippedmntr 
+print(flippedmntr, max = length(flippedmntr))
+
+dallastemp = flippedmntr
+plotts.wge(dallastemp) 
+dallastemp.ts = ts(dallastemp, start = c(1898,9),frequency = 12) 
+dallas_2020_2022 = window(dallastemp.ts, start = c(2014,1), end=c(2022,7)) 
+plotts.wge(dallas_2020_2022,xlab="Data",ylab="Average Monthly Temperature")
+
+head(data) 
+july = data[,c(8)] 
+julym = as.matrix(july) 
+julymnt = as.numeric(t(julym)) 
+julymntr = rev(julymnt) 
+julymntr = na.trim(julymntr) 
+dallas_july.ts = ts(julymntr, start=c(1899),frequency=1)
+july14_23 = window(dallas_july.ts, start = c(1899), end = c(2023))
+plotts.wge(july14_23)
+```
+:::
