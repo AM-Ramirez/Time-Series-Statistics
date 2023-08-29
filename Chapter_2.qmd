@@ -1,0 +1,301 @@
+---
+title: "Chapter 2:  Exploring Time Series Data"
+author: "Alex Ramirez"
+date: "8/29/2023"
+format: 
+  html:
+    toc: true
+editor: visual
+---
+
+## 2.1 Understanding and Visualizing Data
+
+-   Calculate summary statistics: mean / median / std / range / quartiles
+-   Smoothing Out: anomalies that obscure the big picture
+-   Removing seasonality to eliminate major trends: seasonally adjusted data
+
+### 2.1.1 Smoothing Time Series Data
+
+**"Smoothing out"** the noisy (possibly unimportant) behavior from a time series so that **"signal"** can be better understood.
+
+**Most Basic Method: Centered Moving Average Smoother** - Replaces data values with an average of data values surrounding (and including) that data point
+
+$\mathbf{s_t = \frac{(x_{t-1}+x_t+x_{t+1})}{3}}$: meaning the average value is assigned to the middle (2nd) time point, showing that a centered moving average cannot be assigned to a first or last value of a TS dataset
+
+For higher order data sets, more values will be missing at the beginning and end of the smoothed dataset. *Definition 2.1: Centered Moving average smoother* Let $\mathbf{x_t,t=1,...,n}$ be a set of time series data, centered as followed.
+
+**Where** $\mathbf{m}$ is odd: Let $\mathbf{k = (m-1)/2}$. For $\mathbf{k<t<n-k}$ , the smoothed data value, $\mathbf{s_t}$, at time $\mathbf{t}$ is given by $\mathbf{s_t=\frac{1}{m}\sum^{t+k}_{i=t-k}x_i}$
+
+**Where** $\mathbf{m}$ is even: Let $\mathbf{k = m/2}$. For $\mathbf{k<t<n-k}$, the smoothed data value, $\mathbf{s_t}$ at time t is given by $\mathbf{s_t = \frac{x_{t-K}}{2m}+\frac{1}{m}\sum^{t+k-1}_{i=t-k+1}x_i+\frac{x_{t+k}}{2m}}$
+
+$\mathbf{m}$ is your order center (see page 42 for examples).
+
+Question, how do you choose the order to pick? Let's look at some examples.
+
+#### Example 1: Tesla Smoothing
+
+```{r}
+#| warning: false
+  
+library(tswge)
+data(tesla)
+tesla.3= ma.smooth.wge(tesla,order= 3,plot= FALSE)
+tesla.8= ma.smooth.wge(tesla,order= 8,plot= FALSE)
+tesla.5= ma.smooth.wge(tesla,order= 5,plot= TRUE)
+tesla.5 = ts(tesla.5$smooth) #convert to a TS object to get lines not dots
+plot(tesla)
+plot(tesla.3$smooth)
+plot(tesla.8$smooth)
+plot(tesla.5)
+# the plots based on the tswge ts object dfw.yr are obtained analogously
+
+```
+
+#### Example 2: Cosine + trend + noise data set
+
+```{r}
+set.seed(6946)
+t= 1:60
+cosine= cos(2*pi*t/ 10)
+line= - 2+ .05*t
+z= rnorm(n= 60,sd= 1)
+x= cosine+ line+ z
+plot(cosine,type="l")
+plot(line,type="l")
+c = cosine+line
+plot(c,type="l")
+plot(z,type="l")
+plot(x,type="l")
+ma.smooth.wge(x,order= 5)
+
+```
+
+### 2.1.1.2 other methods for smoothing Data
+
+**Filtering** is discussed in chapter 4, LOESS (scatter plot smoothing) / ***first difference filter***.
+
+### 2.1.1.3 Moving Average Smoothing vs. Aggregating
+
+Annual data from the monthly data can be created using **aggregate** to average the 12 monthly observation in each year, which results in one observation per year.
+
+```{r}
+data(sunspot2.0.month)
+data(sunspot2.0)
+sunspot2.0.1749= window(sunspot2.0,start= 1749,end= 2020)
+ss.yr= aggregate(sunspot2.0.month,FUN= mean)
+plot(sunspot2.0.1749)
+plot(sunspot2.0.month)
+plot(ss.yr)
+```
+
+Another Example
+
+```{r}
+data(sunspot2.0)
+data(sunspot2.0.month)
+sunspot2.0.12= ma.smooth.wge(sunspot2.0.month,order= 12,plot= FALSE)
+sunspot2.0.sm12= ts(sunspot2.0.12$smooth,start= c(1749,1),
+frequency= 12)
+par(mfrow= c(2,2))
+plotts.wge(sunspot2.0.1749)
+plotts.wge(ss.yr)
+plotts.wge(sunspot2.0.month)
+plotts.wge(sunspot2.0.sm12)
+
+```
+
+**While the aggregated data and the smoothed data (ordered 12) appear to be very similar:**
+
+1.  The *aggregated data* is a plot of 272 points of annual data from 1449 through 2020 by averaging the months into a single annual value
+
+2.  The *smoothed data* is the result of a moving average smoother, and it contains $\mathbf{3264-12=3252}$ monthly data values
+
+    1.  (6 values are lost at each end fo the series due to the smoother/ 6 at front and 6 at end)
+
+### 2.1.1.4 Using Moving Average Smoothing for estimating trend in data with fixed cycle lengths
+
+We just covered how moving average smoother can uncover underlying *signal* that was covered up by noise. But now we will cover how to remove cyclic content with fixed cycle lengths.
+
+#### Cosine+Line+Noise Data
+
+Increasing the order can remove the cyclic nature of the data, in fact it will identify the periodic cycle of your data (i.e. order=10 generates straight line then period on cycles is 10).
+
+**Key Point:** fancy words meaning that if k is your order smoother and data has periodic cycle of k then smoother removes the cyclic component and reveals ***trend***.
+
+**Example with Airline data with order 10 / 12 / 15 MA**
+
+```{r}
+data(AirPassengers)
+plot(AirPassengers)
+ap_smooth.10 = ma.smooth.wge(AirPassengers,order= 10,plot= FALSE)
+ap_smooth.ts.10 = ts(ap_smooth.10$smooth, start = c(1949,1), frequency=12)
+plot(ap_smooth.ts.10)
+ap_smooth = ma.smooth.wge(AirPassengers,order= 12,plot= FALSE)
+ap_smooth.ts = ts(ap_smooth$smooth, start = c(1949,1), frequency=12)
+plot(ap_smooth.ts)
+ap_smooth.15 = ma.smooth.wge(AirPassengers,order= 15,plot= FALSE)
+ap_smooth.ts.15 = ts(ap_smooth.15$smooth, start = c(1949,1), frequency=12)
+plot(ap_smooth.ts.15)
+
+```
+
+***Texas Unemployment Example See on pages 48 - 49***
+
+Shows example of random wandering path retained even when the cyclic nature is removed
+
+```{r}
+data(tx.unemp.unadj)
+tx.unemp.sm= ma.smooth.wge(tx.unemp.unadj,order= 12, plot= FALSE)
+tx.unemp.sm12= ts(tx.unemp.sm$smooth,start= c(2000,1),frequency= 12)
+tx.16_20 = window(tx.unemp.unadj,start=c(2016,1),end=c(2020,12))
+plot(tx.unemp.unadj)
+plot(tx.16_20)
+plotts.wge(tx.unemp.sm12)
+```
+
+### 2.1.2 Decomposing Seasonal Data
+
+Recall: seasonal data is cyclic and have fixed periods and pattern related to the calendar
+
+**Example: AirPassengers data** Let the data be represented by $\mathbf{x_t}$: a. with seasonal component $\mathbf{s_t}$ b. longer-termed trend component $\mathbf{tr_t}$ c. random noise component $\mathbf{z_t}$
+
+Such that and *additive model* could be $\mathbf{x_t = s_t+tr_t+z_t}$ or a *multiplicative model* could be $\mathbf{x_t = s_t \times tr_t \times z_t}$.
+
+Data like the AirPassengers (with seasonal and trend increases within year) a multiplicative model is best. - To remove the increase, analysts take the **logarithm** of the data set and use the log data for analysis
+
+```{r}
+data(AirPassengers)
+logAirPassengers=log(AirPassengers) # also TS object as it's former is a TS object
+class(logAirPassengers)
+plot(logAirPassengers)
+```
+
+**Both Additive and Multiplicative Decomposition follow similar steps:** 1. Estimate the trend component 2. Remove the trend component that is primarily made up of the season fluctuations in data 3. Calculate an "average" within-year seasonal component 4. Find the remaining noise
+
+**Key Takeaways:**
+
+1.  Data with increasing within-year variability (multiplicative data) are common in economics and other fields
+
+2.  Analysts model multiplicative data in two ways:
+
+    1.  Using *multiplicative model* above
+
+    2.  Taking the logarithm of the data and modeling with an *additive model* above
+
+### 2.1.2.1 Additive Decompositions
+
+Looking at additive decompositions in log Air Passengers and Texas Unemployment Data.
+
+**(1) Log Air Passengers Data** Assumption: sum of seasonal, trend, and random noise is equal to the data
+
+$\mathbf{x_t=\hat{s}+tr_t+\hat{z}}$
+
+**Step by Step** a. Estimate the Trend: plot overlaid with 12th order centered moving average smoother to the data $\mathbf{tr_t=logair.sm12}$
+
+```{r}
+data(AirPassengers)
+logAirPassengers= log(AirPassengers)
+logair.12= ma.smooth.wge(logAirPassengers,order= 12) #12th order plotted data overlaid trend in fig 2.8
+logair.sm12= ts(logair.12$smooth,start= c(1949,1),frequency= 12) #trend component
+
+
+```
+
+b.  Remove the trend Component from the Data: Now we subtract the trend from the data.
+
+```{r}
+data(AirPassengers)
+logAirPassengers= log(AirPassengers)
+logair.12= ma.smooth.wge(logAirPassengers,order= 12)
+logair.sm12= ts(logair.12$smooth,start= c(1949,1),frequency= 12)
+
+seas.logair= logAirPassengers- logair.sm12
+round(seas.logair,4) # rounding to 4 decimal places for listing below
+plot(seas.logair)
+```
+
+c.  Calculate an Average within-year seasonal component: Note seasonal component in the model is an overall patter that is same from year to year, meaning that $\mathbf{[s_t,t=1,...,12]=[s_{t+12},t=1,...,12]=[s_{t+2*(12)},t=1,...,12]=...}$. The noise component adjusts for the year-to-year variations from the overall seasonal pattern. the seasonal patter, is estimated by averaging across years and the estimated seasonal component (which is the same for each year).
+
+***Monthly means example***
+
+```{r}
+# convert the ts file to a vector
+seas.logair.numeric= as.numeric(seas.logair) # convert ts file to a vector
+# convert this vector to a matrix with ncol= number of years
+seas.logair.matrix= matrix(seas.logair.numeric,ncol= 12) #12 years and 12 months
+seas.logair.matrix
+```
+
+Matrix has the rows and columns reversed, so we will transpose it
+
+```{r}
+seas.logair.matrix.t= t(seas.logair.matrix) #transposes the data
+seas.logair.matrix.t
+months= colMeans(seas.logair.matrix.t, na.rm= TRUE) #does a column means and does not include missing values
+round(months,4) #rounds to 4 decimal spaces
+months
+seas.means= rep(months,12) # replicates the 12 monthly means for each year (12)
+seas.means
+seas.means= ts(seas.means,start= c(1949,1),frequency= 12)
+
+logair.noise= logAirPassengers- logair.sm12- seas.means # generates noise via algebra
+logair.noise
+```
+
+Summary of the plots
+
+```{r}
+par(mfrow= c(2,2))
+plot(logAirPassengers,main="Log AirPassengers") # log air data
+plot(logair.sm12,main="Trend Data") # Trend data
+plot(seas.means,main="Seasonal Component") # seasonal component
+plot(logair.noise,main="Noise") # seasonal component
+
+```
+
+**2. Texas Unemployment Data**
+
+Here we will repeat the steps in additive decomposition with the Texas unemployment data.
+
+a.  Estimate the trend
+
+```{r}
+data(tx.unemp.unadj)
+tx.unemp.sm= ma.smooth.wge(tx.unemp.unadj,order= 12,plot= FALSE)
+tx.unemp.sm12= ts(tx.unemp.sm$smooth,start= c(2000,1), frequency= 12)
+plot(tx.unemp.unadj,main="Texas Unemployment Data")
+plotts.wge(tx.unemp.sm12,main="Texas Unemp Smoothed Order 12")
+```
+
+b.  remove the Trend
+
+```{r}
+seas.tx.unemp= tx.unemp.unadj- tx.unemp.sm12
+plot(seas.tx.unemp,main="TX Unemp without Trend")
+
+```
+
+c.  Cal Avg within year
+
+```{r}
+seas.tx.unemp.numeric= as.numeric(seas.tx.unemp) #convert ts file to a vector
+# convert this vector to a matrix with ncol= number of years
+seas.tx.unemp.matrix= matrix(seas.tx.unemp.numeric,ncol= 20) # 20 years
+seas.tx.unemp.matrix.t= t(seas.tx.unemp.matrix) # transpose matrix
+months= colMeans(seas.tx.unemp.matrix.t,na.rm= TRUE) # colMeans are monthly means
+seas.means= rep(months,20) # replicates the 12 monthly means
+seas.means.ts = ts(seas.means,start=c(2000,1),frequency=12)
+plot(seas.means.ts, main="Seasonality Componenet") # seasonality
+tx.unemp.noise= tx.unemp.unadj- tx.unemp.sm12- seas.means
+plot(tx.unemp.noise,main="TX Unemp Noise")
+```
+
+All together:
+
+```{r}
+par(mfrow=c(2,2))
+plot(tx.unemp.unadj,main="Texas Unemployment Data")
+plot(tx.unemp.sm12,main="Texas Unemp Smoothed Order 12 Trend")
+plot(seas.means.ts, main="Seasonality Componenet") # seasonality
+plot(tx.unemp.noise,main="TX Unemp Noise")
+```
