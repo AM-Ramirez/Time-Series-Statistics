@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Alex Ramirez">
+<meta name="dcterms.date" content="2023-08-29">
+
+<title>Chapter 2: Exploring Time Series Data</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Chapter_2_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Chapter_2_files/libs/quarto-html/quarto.js"></script>
+<script src="Chapter_2_files/libs/quarto-html/popper.min.js"></script>
+<script src="Chapter_2_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Chapter_2_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Chapter_2_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Chapter_2_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Chapter_2_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Chapter_2_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Chapter_2_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#understanding-and-visualizing-data" id="toc-understanding-and-visualizing-data" class="nav-link active" data-scroll-target="#understanding-and-visualizing-data">2.1 Understanding and Visualizing Data</a>
+  <ul class="collapse">
+  <li><a href="#smoothing-time-series-data" id="toc-smoothing-time-series-data" class="nav-link" data-scroll-target="#smoothing-time-series-data">2.1.1 Smoothing Time Series Data</a></li>
+  <li><a href="#other-methods-for-smoothing-data" id="toc-other-methods-for-smoothing-data" class="nav-link" data-scroll-target="#other-methods-for-smoothing-data">2.1.1.2 other methods for smoothing Data</a></li>
+  <li><a href="#moving-average-smoothing-vs.-aggregating" id="toc-moving-average-smoothing-vs.-aggregating" class="nav-link" data-scroll-target="#moving-average-smoothing-vs.-aggregating">2.1.1.3 Moving Average Smoothing vs.&nbsp;Aggregating</a></li>
+  <li><a href="#using-moving-average-smoothing-for-estimating-trend-in-data-with-fixed-cycle-lengths" id="toc-using-moving-average-smoothing-for-estimating-trend-in-data-with-fixed-cycle-lengths" class="nav-link" data-scroll-target="#using-moving-average-smoothing-for-estimating-trend-in-data-with-fixed-cycle-lengths">2.1.1.4 Using Moving Average Smoothing for estimating trend in data with fixed cycle lengths</a></li>
+  <li><a href="#decomposing-seasonal-data" id="toc-decomposing-seasonal-data" class="nav-link" data-scroll-target="#decomposing-seasonal-data">2.1.2 Decomposing Seasonal Data</a></li>
+  <li><a href="#additive-decompositions" id="toc-additive-decompositions" class="nav-link" data-scroll-target="#additive-decompositions">2.1.2.1 Additive Decompositions</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Chapter 2: Exploring Time Series Data</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Alex Ramirez </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">August 29, 2023</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="understanding-and-visualizing-data" class="level2">
+<h2 class="anchored" data-anchor-id="understanding-and-visualizing-data">2.1 Understanding and Visualizing Data</h2>
+<ul>
+<li>Calculate summary statistics: mean / median / std / range / quartiles</li>
+<li>Smoothing Out: anomalies that obscure the big picture</li>
+<li>Removing seasonality to eliminate major trends: seasonally adjusted data</li>
+</ul>
+<section id="smoothing-time-series-data" class="level3">
+<h3 class="anchored" data-anchor-id="smoothing-time-series-data">2.1.1 Smoothing Time Series Data</h3>
+<p><strong>“Smoothing out”</strong> the noisy (possibly unimportant) behavior from a time series so that <strong>“signal”</strong> can be better understood.</p>
+<p><strong>Most Basic Method: Centered Moving Average Smoother</strong> - Replaces data values with an average of data values surrounding (and including) that data point</p>
+<p><span class="math inline">\(\mathbf{s_t = \frac{(x_{t-1}+x_t+x_{t+1})}{3}}\)</span>: meaning the average value is assigned to the middle (2nd) time point, showing that a centered moving average cannot be assigned to a first or last value of a TS dataset</p>
+<p>For higher order data sets, more values will be missing at the beginning and end of the smoothed dataset. <em>Definition 2.1: Centered Moving average smoother</em> Let <span class="math inline">\(\mathbf{x_t,t=1,...,n}\)</span> be a set of time series data, centered as followed.</p>
+<p><strong>Where</strong> <span class="math inline">\(\mathbf{m}\)</span> is odd: Let <span class="math inline">\(\mathbf{k = (m-1)/2}\)</span>. For <span class="math inline">\(\mathbf{k&lt;t&lt;n-k}\)</span> , the smoothed data value, <span class="math inline">\(\mathbf{s_t}\)</span>, at time <span class="math inline">\(\mathbf{t}\)</span> is given by <span class="math inline">\(\mathbf{s_t=\frac{1}{m}\sum^{t+k}_{i=t-k}x_i}\)</span></p>
+<p><strong>Where</strong> <span class="math inline">\(\mathbf{m}\)</span> is even: Let <span class="math inline">\(\mathbf{k = m/2}\)</span>. For <span class="math inline">\(\mathbf{k&lt;t&lt;n-k}\)</span>, the smoothed data value, <span class="math inline">\(\mathbf{s_t}\)</span> at time t is given by <span class="math inline">\(\mathbf{s_t = \frac{x_{t-K}}{2m}+\frac{1}{m}\sum^{t+k-1}_{i=t-k+1}x_i+\frac{x_{t+k}}{2m}}\)</span></p>
+<p><span class="math inline">\(\mathbf{m}\)</span> is your order center (see page 42 for examples).</p>
+<p>Question, how do you choose the order to pick? Let’s look at some examples.</p>
+<section id="example-1-tesla-smoothing" class="level4">
+<h4 class="anchored" data-anchor-id="example-1-tesla-smoothing">Example 1: Tesla Smoothing</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tswge)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(tesla)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>tesla<span class="fl">.3</span><span class="ot">=</span> <span class="fu">ma.smooth.wge</span>(tesla,<span class="at">order=</span> <span class="dv">3</span>,<span class="at">plot=</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>2 88.32067 t.start,x.sm </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>tesla<span class="fl">.8</span><span class="ot">=</span> <span class="fu">ma.smooth.wge</span>(tesla,<span class="at">order=</span> <span class="dv">8</span>,<span class="at">plot=</span> <span class="cn">FALSE</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>tesla<span class="fl">.5</span><span class="ot">=</span> <span class="fu">ma.smooth.wge</span>(tesla,<span class="at">order=</span> <span class="dv">5</span>,<span class="at">plot=</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3 91.4404 t.start,x.sm </code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>tesla<span class="fl">.5</span> <span class="ot">=</span> <span class="fu">ts</span>(tesla<span class="fl">.5</span><span class="sc">$</span>smooth) <span class="co">#convert to a TS object to get lines not dots</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tesla)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-1-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tesla<span class="fl">.3</span><span class="sc">$</span>smooth)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-1-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tesla<span class="fl">.8</span><span class="sc">$</span>smooth)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-1-4.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tesla<span class="fl">.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-1-5.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the plots based on the tswge ts object dfw.yr are obtained analogously</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="example-2-cosine-trend-noise-data-set" class="level4">
+<h4 class="anchored" data-anchor-id="example-2-cosine-trend-noise-data-set">Example 2: Cosine + trend + noise data set</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">6946</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>t<span class="ot">=</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">60</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>cosine<span class="ot">=</span> <span class="fu">cos</span>(<span class="dv">2</span><span class="sc">*</span>pi<span class="sc">*</span>t<span class="sc">/</span> <span class="dv">10</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>line<span class="ot">=</span> <span class="sc">-</span> <span class="dv">2</span><span class="sc">+</span> .<span class="dv">05</span><span class="sc">*</span>t</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>z<span class="ot">=</span> <span class="fu">rnorm</span>(<span class="at">n=</span> <span class="dv">60</span>,<span class="at">sd=</span> <span class="dv">1</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>x<span class="ot">=</span> cosine<span class="sc">+</span> line<span class="sc">+</span> z</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(cosine,<span class="at">type=</span><span class="st">"l"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(line,<span class="at">type=</span><span class="st">"l"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-2-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>c <span class="ot">=</span> cosine<span class="sc">+</span>line</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(c,<span class="at">type=</span><span class="st">"l"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-2-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(z,<span class="at">type=</span><span class="st">"l"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-2-4.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(x,<span class="at">type=</span><span class="st">"l"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-2-5.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ma.smooth.wge</span>(x,<span class="at">order=</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3 -2.12267 t.start,x.sm </code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-2-6.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$x
+ [1] -0.43098865 -1.66047164 -2.93852509 -2.77120347 -2.81216039 -3.30871289
+ [7] -2.62953302 -1.11130198 -0.26360353 -1.18902911 -0.94411896 -0.02824640
+[13] -1.57821337 -0.17555580 -2.89238348 -1.05969253 -2.36052535 -0.80102626
+[19] -1.15416357  0.71597757  1.30257802 -0.81419684 -0.59168289 -0.08505661
+[25] -2.61839327 -2.41229081  1.17387095 -0.03278309 -0.01535521  1.26211957
+[31] -0.34456217  0.42260327 -0.73571522 -0.52082055 -0.52129272 -1.46006658
+[37] -2.04290894  1.32460374  2.11350561  1.81092282  0.54404876 -0.57213296
+[43] -0.54446959  0.69797924 -1.76944399  1.04457315  1.26661274 -0.97539846
+[49]  2.32902505  2.03778983 -0.01985884 -0.13186886 -1.33433175 -1.05672486
+[55] -0.27836619  1.25541562  0.52193059  3.36561164  1.95380984  0.75742312
+
+$smooth
+ [1]           NA           NA -2.122669848 -2.698214697 -2.892026973
+ [6] -2.526582351 -2.025062363 -1.700436106 -1.227517319 -0.707259995
+[11] -0.800642273 -0.783032728 -1.123703603 -1.146818317 -1.613274107
+[16] -1.457836686 -1.653558240 -0.931886030 -0.459431920 -0.150166219
+[21] -0.108297544  0.105523848 -0.561350319 -1.304324084 -0.906710526
+[26] -0.794930567 -0.780990286 -0.004887719  0.408658008  0.258404472
+[31]  0.117818046  0.016724978 -0.339957479 -0.563058360 -1.056160800
+[36] -0.644097008 -0.117231777  0.349211331  0.750034399  1.044189595
+[41]  0.670374929  0.387269655 -0.328803708 -0.228698831  0.139050309
+[46]  0.052864534  0.379073698  1.140520462  0.927634065  0.647937744
+[51]  0.576151086 -0.100998897 -0.564230102 -0.309175209 -0.178415319
+[56]  0.761573360  1.363680300  1.570838163           NA           NA
+
+$order
+[1] 5</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="other-methods-for-smoothing-data" class="level3">
+<h3 class="anchored" data-anchor-id="other-methods-for-smoothing-data">2.1.1.2 other methods for smoothing Data</h3>
+<p><strong>Filtering</strong> is discussed in chapter 4, LOESS (scatter plot smoothing) / <strong><em>first difference filter</em></strong>.</p>
+</section>
+<section id="moving-average-smoothing-vs.-aggregating" class="level3">
+<h3 class="anchored" data-anchor-id="moving-average-smoothing-vs.-aggregating">2.1.1.3 Moving Average Smoothing vs.&nbsp;Aggregating</h3>
+<p>Annual data from the monthly data can be created using <strong>aggregate</strong> to average the 12 monthly observation in each year, which results in one observation per year.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(sunspot2.<span class="fl">0.</span>month)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(sunspot2<span class="fl">.0</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>sunspot2.<span class="fl">0.1749</span><span class="ot">=</span> <span class="fu">window</span>(sunspot2<span class="fl">.0</span>,<span class="at">start=</span> <span class="dv">1749</span>,<span class="at">end=</span> <span class="dv">2020</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>ss.yr<span class="ot">=</span> <span class="fu">aggregate</span>(sunspot2.<span class="fl">0.</span>month,<span class="at">FUN=</span> mean)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(sunspot2.<span class="fl">0.1749</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(sunspot2.<span class="fl">0.</span>month)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-3-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ss.yr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-3-3.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Another Example</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(sunspot2<span class="fl">.0</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(sunspot2.<span class="fl">0.</span>month)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>sunspot2.<span class="fl">0.12</span><span class="ot">=</span> <span class="fu">ma.smooth.wge</span>(sunspot2.<span class="fl">0.</span>month,<span class="at">order=</span> <span class="dv">12</span>,<span class="at">plot=</span> <span class="cn">FALSE</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>sunspot2.<span class="fl">0.</span>sm12<span class="ot">=</span> <span class="fu">ts</span>(sunspot2.<span class="fl">0.12</span><span class="sc">$</span>smooth,<span class="at">start=</span> <span class="fu">c</span>(<span class="dv">1749</span>,<span class="dv">1</span>),</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="at">frequency=</span> <span class="dv">12</span>)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="fu">plotts.wge</span>(sunspot2.<span class="fl">0.1749</span>)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="fu">plotts.wge</span>(ss.yr)</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="fu">plotts.wge</span>(sunspot2.<span class="fl">0.</span>month)</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="fu">plotts.wge</span>(sunspot2.<span class="fl">0.</span>sm12)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>While the aggregated data and the smoothed data (ordered 12) appear to be very similar:</strong></p>
+<ol type="1">
+<li><p>The <em>aggregated data</em> is a plot of 272 points of annual data from 1449 through 2020 by averaging the months into a single annual value</p></li>
+<li><p>The <em>smoothed data</em> is the result of a moving average smoother, and it contains <span class="math inline">\(\mathbf{3264-12=3252}\)</span> monthly data values</p>
+<ol type="1">
+<li>(6 values are lost at each end fo the series due to the smoother/ 6 at front and 6 at end)</li>
+</ol></li>
+</ol>
+</section>
+<section id="using-moving-average-smoothing-for-estimating-trend-in-data-with-fixed-cycle-lengths" class="level3">
+<h3 class="anchored" data-anchor-id="using-moving-average-smoothing-for-estimating-trend-in-data-with-fixed-cycle-lengths">2.1.1.4 Using Moving Average Smoothing for estimating trend in data with fixed cycle lengths</h3>
+<p>We just covered how moving average smoother can uncover underlying <em>signal</em> that was covered up by noise. But now we will cover how to remove cyclic content with fixed cycle lengths.</p>
+<section id="cosinelinenoise-data" class="level4">
+<h4 class="anchored" data-anchor-id="cosinelinenoise-data">Cosine+Line+Noise Data</h4>
+<p>Increasing the order can remove the cyclic nature of the data, in fact it will identify the periodic cycle of your data (i.e.&nbsp;order=10 generates straight line then period on cycles is 10).</p>
+<p><strong>Key Point:</strong> fancy words meaning that if k is your order smoother and data has periodic cycle of k then smoother removes the cyclic component and reveals <strong><em>trend</em></strong>.</p>
+<p><strong>Example with Airline data with order 10 / 12 / 15 MA</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(AirPassengers)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(AirPassengers)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>ap_smooth<span class="fl">.10</span> <span class="ot">=</span> <span class="fu">ma.smooth.wge</span>(AirPassengers,<span class="at">order=</span> <span class="dv">10</span>,<span class="at">plot=</span> <span class="cn">FALSE</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>ap_smooth.ts<span class="fl">.10</span> <span class="ot">=</span> <span class="fu">ts</span>(ap_smooth<span class="fl">.10</span><span class="sc">$</span>smooth, <span class="at">start =</span> <span class="fu">c</span>(<span class="dv">1949</span>,<span class="dv">1</span>), <span class="at">frequency=</span><span class="dv">12</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ap_smooth.ts<span class="fl">.10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-5-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>ap_smooth <span class="ot">=</span> <span class="fu">ma.smooth.wge</span>(AirPassengers,<span class="at">order=</span> <span class="dv">12</span>,<span class="at">plot=</span> <span class="cn">FALSE</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>ap_smooth.ts <span class="ot">=</span> <span class="fu">ts</span>(ap_smooth<span class="sc">$</span>smooth, <span class="at">start =</span> <span class="fu">c</span>(<span class="dv">1949</span>,<span class="dv">1</span>), <span class="at">frequency=</span><span class="dv">12</span>)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ap_smooth.ts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-5-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>ap_smooth<span class="fl">.15</span> <span class="ot">=</span> <span class="fu">ma.smooth.wge</span>(AirPassengers,<span class="at">order=</span> <span class="dv">15</span>,<span class="at">plot=</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>8 126.8 t.start,x.sm </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>ap_smooth.ts<span class="fl">.15</span> <span class="ot">=</span> <span class="fu">ts</span>(ap_smooth<span class="fl">.15</span><span class="sc">$</span>smooth, <span class="at">start =</span> <span class="fu">c</span>(<span class="dv">1949</span>,<span class="dv">1</span>), <span class="at">frequency=</span><span class="dv">12</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ap_smooth.ts<span class="fl">.15</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-5-4.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong><em>Texas Unemployment Example See on pages 48 - 49</em></strong></p>
+<p>Shows example of random wandering path retained even when the cyclic nature is removed</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(tx.unemp.unadj)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>tx.unemp.sm<span class="ot">=</span> <span class="fu">ma.smooth.wge</span>(tx.unemp.unadj,<span class="at">order=</span> <span class="dv">12</span>, <span class="at">plot=</span> <span class="cn">FALSE</span>)</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>tx.unemp.sm12<span class="ot">=</span> <span class="fu">ts</span>(tx.unemp.sm<span class="sc">$</span>smooth,<span class="at">start=</span> <span class="fu">c</span>(<span class="dv">2000</span>,<span class="dv">1</span>),<span class="at">frequency=</span> <span class="dv">12</span>)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>tx<span class="fl">.16</span>_20 <span class="ot">=</span> <span class="fu">window</span>(tx.unemp.unadj,<span class="at">start=</span><span class="fu">c</span>(<span class="dv">2016</span>,<span class="dv">1</span>),<span class="at">end=</span><span class="fu">c</span>(<span class="dv">2020</span>,<span class="dv">12</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in window.default(x, ...): 'end' value not changed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tx.unemp.unadj)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tx<span class="fl">.16</span>_20)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotts.wge</span>(tx.unemp.sm12)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-6-3.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="decomposing-seasonal-data" class="level3">
+<h3 class="anchored" data-anchor-id="decomposing-seasonal-data">2.1.2 Decomposing Seasonal Data</h3>
+<p>Recall: seasonal data is cyclic and have fixed periods and pattern related to the calendar</p>
+<p><strong>Example: AirPassengers data</strong> Let the data be represented by <span class="math inline">\(\mathbf{x_t}\)</span>: a. with seasonal component <span class="math inline">\(\mathbf{s_t}\)</span> b. longer-termed trend component <span class="math inline">\(\mathbf{tr_t}\)</span> c.&nbsp;random noise component <span class="math inline">\(\mathbf{z_t}\)</span></p>
+<p>Such that and <em>additive model</em> could be <span class="math inline">\(\mathbf{x_t = s_t+tr_t+z_t}\)</span> or a <em>multiplicative model</em> could be <span class="math inline">\(\mathbf{x_t = s_t \times tr_t \times z_t}\)</span>.</p>
+<p>Data like the AirPassengers (with seasonal and trend increases within year) a multiplicative model is best. - To remove the increase, analysts take the <strong>logarithm</strong> of the data set and use the log data for analysis</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(AirPassengers)</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>logAirPassengers<span class="ot">=</span><span class="fu">log</span>(AirPassengers) <span class="co"># also TS object as it's former is a TS object</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(logAirPassengers)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "ts"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(logAirPassengers)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>Both Additive and Multiplicative Decomposition follow similar steps:</strong> 1. Estimate the trend component 2. Remove the trend component that is primarily made up of the season fluctuations in data 3. Calculate an “average” within-year seasonal component 4. Find the remaining noise</p>
+<p><strong>Key Takeaways:</strong></p>
+<ol type="1">
+<li><p>Data with increasing within-year variability (multiplicative data) are common in economics and other fields</p></li>
+<li><p>Analysts model multiplicative data in two ways:</p>
+<ol type="1">
+<li><p>Using <em>multiplicative model</em> above</p></li>
+<li><p>Taking the logarithm of the data and modeling with an <em>additive model</em> above</p></li>
+</ol></li>
+</ol>
+</section>
+<section id="additive-decompositions" class="level3">
+<h3 class="anchored" data-anchor-id="additive-decompositions">2.1.2.1 Additive Decompositions</h3>
+<p>Looking at additive decompositions in log Air Passengers and Texas Unemployment Data.</p>
+<p><strong>(1) Log Air Passengers Data</strong> Assumption: sum of seasonal, trend, and random noise is equal to the data</p>
+<p><span class="math inline">\(\mathbf{x_t=\hat{s}+tr_t+\hat{z}}\)</span></p>
+<p><strong>Step by Step</strong> a. Estimate the Trend: plot overlaid with 12th order centered moving average smoother to the data <span class="math inline">\(\mathbf{tr_t=logair.sm12}\)</span></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(AirPassengers)</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>logAirPassengers<span class="ot">=</span> <span class="fu">log</span>(AirPassengers)</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>logair<span class="fl">.12</span><span class="ot">=</span> <span class="fu">ma.smooth.wge</span>(logAirPassengers,<span class="at">order=</span> <span class="dv">12</span>) <span class="co">#12th order plotted data overlaid trend in fig 2.8</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>logair.sm12<span class="ot">=</span> <span class="fu">ts</span>(logair<span class="fl">.12</span><span class="sc">$</span>smooth,<span class="at">start=</span> <span class="fu">c</span>(<span class="dv">1949</span>,<span class="dv">1</span>),<span class="at">frequency=</span> <span class="dv">12</span>) <span class="co">#trend component</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ol start="2" type="a">
+<li>Remove the trend Component from the Data: Now we subtract the trend from the data.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(AirPassengers)</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>logAirPassengers<span class="ot">=</span> <span class="fu">log</span>(AirPassengers)</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>logair<span class="fl">.12</span><span class="ot">=</span> <span class="fu">ma.smooth.wge</span>(logAirPassengers,<span class="at">order=</span> <span class="dv">12</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>logair.sm12<span class="ot">=</span> <span class="fu">ts</span>(logair<span class="fl">.12</span><span class="sc">$</span>smooth,<span class="at">start=</span> <span class="fu">c</span>(<span class="dv">1949</span>,<span class="dv">1</span>),<span class="at">frequency=</span> <span class="dv">12</span>)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>seas.logair<span class="ot">=</span> logAirPassengers<span class="sc">-</span> logair.sm12</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(seas.logair,<span class="dv">4</span>) <span class="co"># rounding to 4 decimal places for listing below</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         Jan     Feb     Mar     Apr     May     Jun     Jul     Aug     Sep
+1949      NA      NA      NA      NA      NA      NA  0.1599  0.1561  0.0661
+1950 -0.1249 -0.0451  0.0553  0.0010 -0.0844  0.0802  0.1953  0.1784  0.0882
+1951 -0.0710 -0.0503  0.1080  0.0054  0.0406  0.0575  0.1550  0.1406  0.0512
+1952 -0.0622 -0.0251  0.0311 -0.0452 -0.0479  0.1138  0.1552  0.1968  0.0383
+1953 -0.0896 -0.1002  0.0754  0.0618  0.0299  0.0858  0.1656  0.1955  0.0597
+1954 -0.1015 -0.1919  0.0245 -0.0173  0.0047  0.1148  0.2368  0.1905  0.0529
+1955 -0.0689 -0.1217 -0.0002 -0.0080 -0.0182  0.1214  0.2512  0.1895  0.0688
+1956 -0.0782 -0.1148  0.0082 -0.0145 -0.0088  0.1438  0.2347  0.2074  0.0673
+1957 -0.0901 -0.1464  0.0101 -0.0233 -0.0135  0.1505  0.2405  0.2393  0.0914
+1958 -0.0884 -0.1608 -0.0345 -0.0754 -0.0353  0.1449  0.2635  0.2862  0.0552
+1959 -0.0992 -0.1593  0.0024 -0.0335  0.0137  0.1163  0.2518  0.2600  0.0646
+1960 -0.0794 -0.1524 -0.0905 -0.0040  0.0112  0.1307      NA      NA      NA
+         Oct     Nov     Dec
+1949 -0.0721 -0.2101 -0.0893
+1950 -0.1016 -0.2769 -0.0922
+1951 -0.0839 -0.1948 -0.0774
+1952 -0.0711 -0.1961 -0.0896
+1953 -0.0549 -0.2133 -0.1073
+1954 -0.0826 -0.2162 -0.1090
+1955 -0.0745 -0.2327 -0.0871
+1956 -0.0905 -0.2210 -0.1091
+1957 -0.0614 -0.1913 -0.0967
+1958 -0.0730 -0.2312 -0.1572
+1959 -0.0719 -0.2003 -0.0981
+1960      NA      NA      NA</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(seas.logair)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-9-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ol start="3" type="a">
+<li>Calculate an Average within-year seasonal component: Note seasonal component in the model is an overall patter that is same from year to year, meaning that <span class="math inline">\(\mathbf{[s_t,t=1,...,12]=[s_{t+12},t=1,...,12]=[s_{t+2*(12)},t=1,...,12]=...}\)</span>. The noise component adjusts for the year-to-year variations from the overall seasonal pattern. the seasonal patter, is estimated by averaging across years and the estimated seasonal component (which is the same for each year).</li>
+</ol>
+<p><strong><em>Monthly means example</em></strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># convert the ts file to a vector</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>seas.logair.numeric<span class="ot">=</span> <span class="fu">as.numeric</span>(seas.logair) <span class="co"># convert ts file to a vector</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="co"># convert this vector to a matrix with ncol= number of years</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>seas.logair.matrix<span class="ot">=</span> <span class="fu">matrix</span>(seas.logair.numeric,<span class="at">ncol=</span> <span class="dv">12</span>) <span class="co">#12 years and 12 months</span></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>seas.logair.matrix</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             [,1]         [,2]         [,3]        [,4]        [,5]
+ [1,]          NA -0.124907895 -0.071042584 -0.06224580 -0.08958054
+ [2,]          NA -0.045106963 -0.050266564 -0.02513614 -0.10019446
+ [3,]          NA  0.055349091  0.107971395  0.03113755  0.07541476
+ [4,]          NA  0.000982071  0.005371882 -0.04522542  0.06178053
+ [5,]          NA -0.084438686  0.040588851 -0.04792651  0.02987339
+ [6,]          NA  0.080245326  0.057471527  0.11375915  0.08584162
+ [7,]  0.15993242  0.195315815  0.155023002  0.15516333  0.16558544
+ [8,]  0.15609782  0.178392690  0.140554195  0.19678804  0.19550788
+ [9,]  0.06605896  0.088215243  0.051217286  0.03825543  0.05967924
+[10,] -0.07211495 -0.101593124 -0.083857697 -0.07106499 -0.05490269
+[11,] -0.21009694 -0.276896144 -0.194794849 -0.19606578 -0.21326079
+[12,] -0.08926966 -0.092161252 -0.077442982 -0.08956886 -0.10726635
+              [,6]          [,7]         [,8]        [,9]       [,10]
+ [1,] -0.101508162 -0.0689266001 -0.078179258 -0.09009199 -0.08841481
+ [2,] -0.191888212 -0.1216541652 -0.114838323 -0.14643070 -0.16083554
+ [3,]  0.024457904 -0.0002492644  0.008226074  0.01006729 -0.03450226
+ [4,] -0.017287251 -0.0080190944 -0.014454659 -0.02328749 -0.07536056
+ [5,]  0.004662472 -0.0182360261 -0.008794620 -0.01353604 -0.03525430
+ [6,]  0.114846034  0.1213832674  0.143825517  0.15052986  0.14488755
+ [7,]  0.236772497  0.2512171786  0.234702213  0.24048283  0.26348023
+ [8,]  0.190459162  0.1895124424  0.207362889  0.23930326  0.28618129
+ [9,]  0.052853797  0.0688311766  0.067296873  0.09140327  0.05522656
+[10,] -0.082644949 -0.0745082768 -0.090486992 -0.06138322 -0.07302929
+[11,] -0.216196899 -0.2327062935 -0.220956010 -0.19132477 -0.23124037
+[12,] -0.109002723 -0.0871166785 -0.109107059 -0.09671813 -0.15720827
+             [,11]        [,12]
+ [1,] -0.099164841 -0.079425208
+ [2,] -0.159267394 -0.152445342
+ [3,]  0.002362395 -0.090510519
+ [4,] -0.033485011 -0.004039198
+ [5,]  0.013665376  0.011246436
+ [6,]  0.116269815  0.130740821
+ [7,]  0.251783353           NA
+ [8,]  0.259954247           NA
+ [9,]  0.064639553           NA
+[10,] -0.071920215           NA
+[11,] -0.200285360           NA
+[12,] -0.098126339           NA</code></pre>
+</div>
+</div>
+<p>Matrix has the rows and columns reversed, so we will transpose it</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>seas.logair.matrix.t<span class="ot">=</span> <span class="fu">t</span>(seas.logair.matrix) <span class="co">#transposes the data</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>seas.logair.matrix.t</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             [,1]        [,2]          [,3]         [,4]         [,5]
+ [1,]          NA          NA            NA           NA           NA
+ [2,] -0.12490789 -0.04510696  0.0553490906  0.000982071 -0.084438686
+ [3,] -0.07104258 -0.05026656  0.1079713954  0.005371882  0.040588851
+ [4,] -0.06224580 -0.02513614  0.0311375532 -0.045225421 -0.047926505
+ [5,] -0.08958054 -0.10019446  0.0754147622  0.061780530  0.029873391
+ [6,] -0.10150816 -0.19188821  0.0244579036 -0.017287251  0.004662472
+ [7,] -0.06892660 -0.12165417 -0.0002492644 -0.008019094 -0.018236026
+ [8,] -0.07817926 -0.11483832  0.0082260740 -0.014454659 -0.008794620
+ [9,] -0.09009199 -0.14643070  0.0100672942 -0.023287489 -0.013536039
+[10,] -0.08841481 -0.16083554 -0.0345022639 -0.075360563 -0.035254297
+[11,] -0.09916484 -0.15926739  0.0023623947 -0.033485011  0.013665376
+[12,] -0.07942521 -0.15244534 -0.0905105193 -0.004039198  0.011246436
+            [,6]      [,7]      [,8]       [,9]       [,10]      [,11]
+ [1,]         NA 0.1599324 0.1560978 0.06605896 -0.07211495 -0.2100969
+ [2,] 0.08024533 0.1953158 0.1783927 0.08821524 -0.10159312 -0.2768961
+ [3,] 0.05747153 0.1550230 0.1405542 0.05121729 -0.08385770 -0.1947948
+ [4,] 0.11375915 0.1551633 0.1967880 0.03825543 -0.07106499 -0.1960658
+ [5,] 0.08584162 0.1655854 0.1955079 0.05967924 -0.05490269 -0.2132608
+ [6,] 0.11484603 0.2367725 0.1904592 0.05285380 -0.08264495 -0.2161969
+ [7,] 0.12138327 0.2512172 0.1895124 0.06883118 -0.07450828 -0.2327063
+ [8,] 0.14382552 0.2347022 0.2073629 0.06729687 -0.09048699 -0.2209560
+ [9,] 0.15052986 0.2404828 0.2393033 0.09140327 -0.06138322 -0.1913248
+[10,] 0.14488755 0.2634802 0.2861813 0.05522656 -0.07302929 -0.2312404
+[11,] 0.11626982 0.2517834 0.2599542 0.06463955 -0.07192021 -0.2002854
+[12,] 0.13074082        NA        NA         NA          NA         NA
+            [,12]
+ [1,] -0.08926966
+ [2,] -0.09216125
+ [3,] -0.07744298
+ [4,] -0.08956886
+ [5,] -0.10726635
+ [6,] -0.10900272
+ [7,] -0.08711668
+ [8,] -0.10910706
+ [9,] -0.09671813
+[10,] -0.15720827
+[11,] -0.09812634
+[12,]          NA</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>months<span class="ot">=</span> <span class="fu">colMeans</span>(seas.logair.matrix.t, <span class="at">na.rm=</span> <span class="cn">TRUE</span>) <span class="co">#does a column means and does not include missing values</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(months,<span class="dv">4</span>) <span class="co">#rounds to 4 decimal spaces</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] -0.0867 -0.1153  0.0172 -0.0139 -0.0098  0.1145  0.2100  0.2036  0.0640
+[10] -0.0761 -0.2167 -0.1012</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>months</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] -0.086680699 -0.115278528  0.017247675 -0.013911291 -0.009831786
+ [6]  0.114527317  0.209950755  0.203646719  0.063970671 -0.076136945
+[11] -0.216711292 -0.101180755</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>seas.means<span class="ot">=</span> <span class="fu">rep</span>(months,<span class="dv">12</span>) <span class="co"># replicates the 12 monthly means for each year (12)</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>seas.means</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  [1] -0.086680699 -0.115278528  0.017247675 -0.013911291 -0.009831786
+  [6]  0.114527317  0.209950755  0.203646719  0.063970671 -0.076136945
+ [11] -0.216711292 -0.101180755 -0.086680699 -0.115278528  0.017247675
+ [16] -0.013911291 -0.009831786  0.114527317  0.209950755  0.203646719
+ [21]  0.063970671 -0.076136945 -0.216711292 -0.101180755 -0.086680699
+ [26] -0.115278528  0.017247675 -0.013911291 -0.009831786  0.114527317
+ [31]  0.209950755  0.203646719  0.063970671 -0.076136945 -0.216711292
+ [36] -0.101180755 -0.086680699 -0.115278528  0.017247675 -0.013911291
+ [41] -0.009831786  0.114527317  0.209950755  0.203646719  0.063970671
+ [46] -0.076136945 -0.216711292 -0.101180755 -0.086680699 -0.115278528
+ [51]  0.017247675 -0.013911291 -0.009831786  0.114527317  0.209950755
+ [56]  0.203646719  0.063970671 -0.076136945 -0.216711292 -0.101180755
+ [61] -0.086680699 -0.115278528  0.017247675 -0.013911291 -0.009831786
+ [66]  0.114527317  0.209950755  0.203646719  0.063970671 -0.076136945
+ [71] -0.216711292 -0.101180755 -0.086680699 -0.115278528  0.017247675
+ [76] -0.013911291 -0.009831786  0.114527317  0.209950755  0.203646719
+ [81]  0.063970671 -0.076136945 -0.216711292 -0.101180755 -0.086680699
+ [86] -0.115278528  0.017247675 -0.013911291 -0.009831786  0.114527317
+ [91]  0.209950755  0.203646719  0.063970671 -0.076136945 -0.216711292
+ [96] -0.101180755 -0.086680699 -0.115278528  0.017247675 -0.013911291
+[101] -0.009831786  0.114527317  0.209950755  0.203646719  0.063970671
+[106] -0.076136945 -0.216711292 -0.101180755 -0.086680699 -0.115278528
+[111]  0.017247675 -0.013911291 -0.009831786  0.114527317  0.209950755
+[116]  0.203646719  0.063970671 -0.076136945 -0.216711292 -0.101180755
+[121] -0.086680699 -0.115278528  0.017247675 -0.013911291 -0.009831786
+[126]  0.114527317  0.209950755  0.203646719  0.063970671 -0.076136945
+[131] -0.216711292 -0.101180755 -0.086680699 -0.115278528  0.017247675
+[136] -0.013911291 -0.009831786  0.114527317  0.209950755  0.203646719
+[141]  0.063970671 -0.076136945 -0.216711292 -0.101180755</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>seas.means<span class="ot">=</span> <span class="fu">ts</span>(seas.means,<span class="at">start=</span> <span class="fu">c</span>(<span class="dv">1949</span>,<span class="dv">1</span>),<span class="at">frequency=</span> <span class="dv">12</span>)</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>logair.noise<span class="ot">=</span> logAirPassengers<span class="sc">-</span> logair.sm12<span class="sc">-</span> seas.means <span class="co"># generates noise via algebra</span></span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>logair.noise</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>               Jan           Feb           Mar           Apr           May
+1949            NA            NA            NA            NA            NA
+1950 -0.0382271961  0.0701715649  0.0381014160  0.0148933623 -0.0746069000
+1951  0.0156381150  0.0650119637  0.0907237208  0.0192831733  0.0504206367
+1952  0.0244349022  0.0901423849  0.0138898787 -0.0313141293 -0.0380947190
+1953 -0.0028998363  0.0150840708  0.0581670876  0.0756918210  0.0397051771
+1954 -0.0148274629 -0.0766096836  0.0072102290 -0.0033759598  0.0144942580
+1955  0.0177540987 -0.0063756370 -0.0174969390  0.0058921968 -0.0084042400
+1956  0.0085014413  0.0004402048 -0.0090216006 -0.0005433680  0.0010371660
+1957 -0.0034112956 -0.0311521737 -0.0071803803 -0.0093761976 -0.0037042527
+1958 -0.0017341149 -0.0455570160 -0.0517499385 -0.0614492718 -0.0254225111
+1959 -0.0124841420 -0.0439888655 -0.0148852798 -0.0195737196  0.0234971623
+1960  0.0072554907 -0.0371668133 -0.1077581939  0.0098720928  0.0210782226
+               Jun           Jul           Aug           Sep           Oct
+1949            NA -0.0500183330 -0.0475489028  0.0020882880  0.0040219973
+1950 -0.0342819903 -0.0146349394 -0.0252540283  0.0242445715 -0.0254561789
+1951 -0.0570557901 -0.0549277528 -0.0630925239 -0.0127533849 -0.0077207523
+1952 -0.0007681713 -0.0547874246 -0.0068586759 -0.0257152452  0.0050719596
+1953 -0.0286856994 -0.0443653145 -0.0081388418 -0.0042914283  0.0212342547
+1954  0.0003187170  0.0268217421 -0.0131875562 -0.0111168741 -0.0065080038
+1955  0.0068559507  0.0412664239 -0.0141342762  0.0048605055  0.0016286683
+1956  0.0292982000  0.0247514580  0.0037161699  0.0033262016 -0.0143500466
+1957  0.0360025435  0.0305320705  0.0356565380  0.0274325975  0.0147537206
+1958  0.0303602374  0.0535294718  0.0825345690 -0.0087441140  0.0031076510
+1959  0.0017424984  0.0418325981  0.0563075282  0.0006688823  0.0042167302
+1960  0.0162135041            NA            NA            NA            NA
+               Nov           Dec
+1949  0.0066143514  0.0119110933
+1950 -0.0601848521  0.0090195026
+1951  0.0219164430  0.0237377733
+1952  0.0206455078  0.0116118936
+1953  0.0034505015 -0.0060855937
+1954  0.0005143931 -0.0078219683
+1955 -0.0159950017  0.0140640764
+1956 -0.0042447184 -0.0079263043
+1957  0.0253865204  0.0044626268
+1958 -0.0145290770 -0.0560275156
+1959  0.0164259321  0.0030544158
+1960            NA            NA</code></pre>
+</div>
+</div>
+<p>Summary of the plots</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(logAirPassengers,<span class="at">main=</span><span class="st">"Log AirPassengers"</span>) <span class="co"># log air data</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(logair.sm12,<span class="at">main=</span><span class="st">"Trend Data"</span>) <span class="co"># Trend data</span></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(seas.means,<span class="at">main=</span><span class="st">"Seasonal Component"</span>) <span class="co"># seasonal component</span></span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(logair.noise,<span class="at">main=</span><span class="st">"Noise"</span>) <span class="co"># seasonal component</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>2. Texas Unemployment Data</strong></p>
+<p>Here we will repeat the steps in additive decomposition with the Texas unemployment data.</p>
+<ol type="a">
+<li>Estimate the trend</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(tx.unemp.unadj)</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>tx.unemp.sm<span class="ot">=</span> <span class="fu">ma.smooth.wge</span>(tx.unemp.unadj,<span class="at">order=</span> <span class="dv">12</span>,<span class="at">plot=</span> <span class="cn">FALSE</span>)</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>tx.unemp.sm12<span class="ot">=</span> <span class="fu">ts</span>(tx.unemp.sm<span class="sc">$</span>smooth,<span class="at">start=</span> <span class="fu">c</span>(<span class="dv">2000</span>,<span class="dv">1</span>), <span class="at">frequency=</span> <span class="dv">12</span>)</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tx.unemp.unadj,<span class="at">main=</span><span class="st">"Texas Unemployment Data"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotts.wge</span>(tx.unemp.sm12,<span class="at">main=</span><span class="st">"Texas Unemp Smoothed Order 12"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-13-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ol start="2" type="a">
+<li>remove the Trend</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>seas.tx.unemp<span class="ot">=</span> tx.unemp.unadj<span class="sc">-</span> tx.unemp.sm12</span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(seas.tx.unemp,<span class="at">main=</span><span class="st">"TX Unemp without Trend"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ol start="3" type="a">
+<li>Cal Avg within year</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>seas.tx.unemp.numeric<span class="ot">=</span> <span class="fu">as.numeric</span>(seas.tx.unemp) <span class="co">#convert ts file to a vector</span></span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a><span class="co"># convert this vector to a matrix with ncol= number of years</span></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>seas.tx.unemp.matrix<span class="ot">=</span> <span class="fu">matrix</span>(seas.tx.unemp.numeric,<span class="at">ncol=</span> <span class="dv">20</span>) <span class="co"># 20 years</span></span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>seas.tx.unemp.matrix.t<span class="ot">=</span> <span class="fu">t</span>(seas.tx.unemp.matrix) <span class="co"># transpose matrix</span></span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>months<span class="ot">=</span> <span class="fu">colMeans</span>(seas.tx.unemp.matrix.t,<span class="at">na.rm=</span> <span class="cn">TRUE</span>) <span class="co"># colMeans are monthly means</span></span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>seas.means<span class="ot">=</span> <span class="fu">rep</span>(months,<span class="dv">20</span>) <span class="co"># replicates the 12 monthly means</span></span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>seas.means.ts <span class="ot">=</span> <span class="fu">ts</span>(seas.means,<span class="at">start=</span><span class="fu">c</span>(<span class="dv">2000</span>,<span class="dv">1</span>),<span class="at">frequency=</span><span class="dv">12</span>)</span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(seas.means.ts, <span class="at">main=</span><span class="st">"Seasonality Componenet"</span>) <span class="co"># seasonality</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>tx.unemp.noise<span class="ot">=</span> tx.unemp.unadj<span class="sc">-</span> tx.unemp.sm12<span class="sc">-</span> seas.means</span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tx.unemp.noise,<span class="at">main=</span><span class="st">"TX Unemp Noise"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-15-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>All together:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tx.unemp.unadj,<span class="at">main=</span><span class="st">"Texas Unemployment Data"</span>)</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tx.unemp.sm12,<span class="at">main=</span><span class="st">"Texas Unemp Smoothed Order 12 Trend"</span>)</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(seas.means.ts, <span class="at">main=</span><span class="st">"Seasonality Componenet"</span>) <span class="co"># seasonality</span></span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tx.unemp.noise,<span class="at">main=</span><span class="st">"TX Unemp Noise"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Chapter_2_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
